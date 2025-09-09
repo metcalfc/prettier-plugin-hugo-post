@@ -1,6 +1,15 @@
 # Test files - should remain unformatted to test plugin behavior
 test-files/
 examples/
+**/*.test.md
+**/*.spec.md
+
+# Documentation files that should use standard markdown formatting
+!README.md
+!CONTRIBUTING.md
+!CHANGELOG.md
+!PUBLISHING.md  
+!TESTING.md
 
 # Build outputs
 dist/
