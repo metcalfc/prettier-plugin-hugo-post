@@ -3,6 +3,7 @@
 ## Quick Start Testing
 
 ### 1. **Automated Setup & Testing**
+
 ```bash
 cd ~/src/github.com/metcalfc/prettier-plugin-hugo-post
 
@@ -11,6 +12,7 @@ npm run setup
 ```
 
 ### 2. **Individual Test Commands**
+
 ```bash
 # Basic tests
 npm test                    # Jest test suite (70+ tests)
@@ -26,10 +28,13 @@ npm run format:check       # Check if code is properly formatted
 ## Testing Options Explained
 
 ### 🚀 **Option 1: Comprehensive Test Suite**
+
 ```bash
 npm run test:comprehensive
 ```
+
 **What it does:**
+
 - Runs Jest automated tests
 - Tests plugin loading and exports
 - Formats multiple test files with before/after output
@@ -41,10 +46,13 @@ npm run test:comprehensive
 **Best for:** Complete validation before publishing
 
 ### ⚡ **Option 2: Interactive Testing**
+
 ```bash
 npm run test:interactive
 ```
+
 **What it does:**
+
 - Menu-driven testing interface
 - Quick format testing
 - Custom file testing
@@ -54,10 +62,13 @@ npm run test:interactive
 **Best for:** Development and troubleshooting
 
 ### 🧪 **Option 3: Jest Test Suite Only**
+
 ```bash
 npm test
 ```
+
 **What it does:**
+
 - Runs 70+ automated unit tests
 - Tests all formatters and parsers
 - Validates configuration options
@@ -66,10 +77,13 @@ npm test
 **Best for:** Continuous integration and development
 
 ### 📝 **Option 4: Example File Testing**
+
 ```bash
 npm run example
 ```
+
 **What it does:**
+
 - Formats the main example file (`examples/test.md`)
 - Shows immediate before/after results
 - Quick validation that plugin works
@@ -79,6 +93,7 @@ npm run example
 ## Manual Testing with Your Own Files
 
 ### **Test with a specific Hugo file:**
+
 ```bash
 # Format and see output
 ./node_modules/.bin/prettier --plugin ./src/index.js /path/to/your/hugo/post.md
@@ -91,6 +106,7 @@ npm run example
 ```
 
 ### **Test with configuration options:**
+
 ```bash
 # Disable bracket spacing
 ./node_modules/.bin/prettier --plugin ./src/index.js --hugo-template-bracket-spacing=false your-file.md
@@ -102,6 +118,7 @@ npm run example
 ## Test Files Included
 
 ### **Pre-built Test Cases:**
+
 ```
 test-files/
 ├── basic.md        # Simple Hugo content with basic templates
@@ -115,6 +132,7 @@ examples/
 ```
 
 ### **Test Content Types:**
+
 - ✅ YAML/TOML/JSON front matter
 - ✅ Hugo variables (`{{ .Title }}`)
 - ✅ Hugo shortcodes (`{{< figure >}}`)
@@ -131,23 +149,27 @@ examples/
 ### **If tests fail:**
 
 1. **Check Node.js version:**
+
    ```bash
    node --version  # Should be 14.x or higher
    ```
 
 2. **Reinstall dependencies:**
+
    ```bash
    rm -rf node_modules package-lock.json
    npm install
    ```
 
 3. **Run debug mode:**
+
    ```bash
    npm run test:interactive
    # Choose option 4 (debug)
    ```
 
 4. **Check specific test:**
+
    ```bash
    npm test -- --testNamePattern="Front Matter"
    ```
@@ -160,8 +182,9 @@ examples/
 ## Performance Benchmarks
 
 The plugin should:
+
 - ✅ Format simple files (< 100 lines) in < 100ms
-- ✅ Format complex files (< 1000 lines) in < 1s  
+- ✅ Format complex files (< 1000 lines) in < 1s
 - ✅ Format large files (< 5000 lines) in < 5s
 - ✅ Handle malformed content gracefully
 - ✅ Preserve all Hugo functionality
@@ -169,7 +192,9 @@ The plugin should:
 ## Integration Testing
 
 ### **VS Code Integration:**
+
 1. Create `.prettierrc` in your Hugo project:
+
    ```json
    {
      "plugins": ["~/src/github.com/metcalfc/prettier-plugin-hugo-post/src/index.js"],
@@ -186,6 +211,7 @@ The plugin should:
 3. Format with `Shift+Alt+F` (or `Cmd+Shift+P` → "Format Document")
 
 ### **CLI Integration:**
+
 ```bash
 # In your Hugo project root
 ./node_modules/.bin/prettier --plugin ../prettier-plugin-hugo-post/src/index.js --write "content/**/*.md"
@@ -194,6 +220,7 @@ The plugin should:
 ## Test Coverage
 
 Current test coverage includes:
+
 - ✅ **Parser tests:** Front matter extraction, template detection
 - ✅ **Formatter tests:** All template types, shortcodes, markdown
 - ✅ **Option tests:** All configuration options
@@ -206,6 +233,7 @@ Current test coverage includes:
 Once all tests pass:
 
 1. **Use in your Hugo project:**
+
    ```bash
    cd /path/to/your/hugo/site
    npm install --save-dev /Users/metcalfc/src/github.com/metcalfc/prettier-plugin-hugo-post
@@ -214,6 +242,7 @@ Once all tests pass:
 2. **Configure VS Code** with the `.prettierrc` setup
 
 3. **Format your content:**
+
    ```bash
    npx prettier --write "content/**/*.md"
    ```

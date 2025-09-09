@@ -9,36 +9,36 @@ const { concat, hardline, join } = builders;
 // Plugin metadata
 export const languages = [
   {
-    name: "Hugo Post",
-    parsers: ["hugo-post"],
-    extensions: [".md"],
-    filenames: []
-  }
+    name: 'Hugo Post',
+    parsers: ['hugo-post'],
+    extensions: ['.md'],
+    filenames: [],
+  },
 ];
 
 export const parsers = {
-  "hugo-post": {
+  'hugo-post': {
     parse: parseHugoPost,
-    astFormat: "hugo-post-ast",
+    astFormat: 'hugo-post-ast',
     locStart: () => 0,
-    locEnd: (node) => node.source?.length || 0,
-  }
+    locEnd: node => node.source?.length || 0,
+  },
 };
 
 export const printers = {
-  "hugo-post-ast": {
+  'hugo-post-ast': {
     print: printHugoPost,
-    embed: embedHugoPost
-  }
+    embed: embedHugoPost,
+  },
 };
 
 export const options = {
   hugoTemplateBracketSpacing: {
-    type: "boolean",
-    category: "Hugo",
+    type: 'boolean',
+    category: 'Hugo',
     default: true,
-    description: "Print spaces between go template brackets",
-  }
+    description: 'Print spaces between go template brackets',
+  },
 };
 
 /**
@@ -46,15 +46,17 @@ export const options = {
  */
 function parseHugoPost(text) {
   const parts = splitFrontMatter(text);
-  
+
   return {
-    type: "hugo-post",
+    type: 'hugo-post',
     source: text,
-    frontMatter: parts.frontMatter ? {
-      content: parts.frontMatter,
-      delimiter: parts.delimiter
-    } : null,
-    content: parts.content || ""
+    frontMatter: parts.frontMatter
+      ? {
+          content: parts.frontMatter,
+          delimiter: parts.delimiter,
+        }
+      : null,
+    content: parts.content || '',
   };
 }
 
@@ -68,25 +70,25 @@ function splitFrontMatter(text) {
     return {
       frontMatter: yamlMatch[1],
       delimiter: 'yaml',
-      content: yamlMatch[2]
+      content: yamlMatch[2],
     };
   }
-  
+
   // TOML front matter
   const tomlMatch = text.match(/^\+\+\+\r?\n([\s\S]*?)\r?\n\+\+\+\r?\n([\s\S]*)$/);
   if (tomlMatch) {
     return {
       frontMatter: tomlMatch[1],
       delimiter: 'toml',
-      content: tomlMatch[2]
+      content: tomlMatch[2],
     };
   }
-  
+
   // No front matter
   return {
     frontMatter: null,
     delimiter: null,
-    content: text
+    content: text,
   };
 }
 
@@ -97,10 +99,10 @@ function extractTemplates(content) {
   const templates = [];
   const matchedRanges = [];
   const patterns = [
-    { regex: /\{\{<\s*[^>]*\s*>\}\}/g, type: 'shortcode' },      // Hugo shortcodes (check first)
-    { regex: /\{\{%\s*[^%]*\s*%\}\}/g, type: 'shortcode' },      // Hugo shortcode alternatives
-    { regex: /\{\{\/\*[\s\S]*?\*\/\}\}/g, type: 'comment' },     // Hugo comments
-    { regex: /\{\{-?\s*[^}]*\s*-?\}\}/g, type: null }            // Hugo variables and functions (check last)
+    { regex: /\{\{<\s*[^>]*\s*>\}\}/g, type: 'shortcode' }, // Hugo shortcodes (check first)
+    { regex: /\{\{%\s*[^%]*\s*%\}\}/g, type: 'shortcode' }, // Hugo shortcode alternatives
+    { regex: /\{\{\/\*[\s\S]*?\*\/\}\}/g, type: 'comment' }, // Hugo comments
+    { regex: /\{\{-?\s*[^}]*\s*-?\}\}/g, type: null }, // Hugo variables and functions (check last)
   ];
 
   patterns.forEach(({ regex, type }) => {
@@ -108,19 +110,17 @@ function extractTemplates(content) {
     while ((match = regex.exec(content)) !== null) {
       const start = match.index;
       const end = match.index + match[0].length;
-      
+
       // Check if this range overlaps with any existing match
-      const overlaps = matchedRanges.some(range => 
-        (start < range.end && end > range.start)
-      );
-      
+      const overlaps = matchedRanges.some(range => start < range.end && end > range.start);
+
       if (!overlaps) {
         matchedRanges.push({ start, end });
         templates.push({
           start,
           end,
           content: match[0],
-          type: type || classifyTemplate(match[0])
+          type: type || classifyTemplate(match[0]),
         });
       }
     }
@@ -151,10 +151,10 @@ function classifyTemplate(template) {
  */
 function printHugoPost(path, options) {
   const node = path.getValue();
-  
+
   // The actual formatting is handled by the embed function
   // This should not be called when embed is used
-  return node.source || "";
+  return node.source || '';
 }
 
 /**
@@ -162,54 +162,36 @@ function printHugoPost(path, options) {
  */
 function embedHugoPost(path, options) {
   const node = path.getValue();
-  
-  if (node.type === "hugo-post") {
-    return async (textToDoc) => {
+
+  if (node.type === 'hugo-post') {
+    return async textToDoc => {
       const docs = [];
-      
+
       // Format front matter using appropriate parser
       if (node.frontMatter) {
         if (node.frontMatter.delimiter === 'yaml') {
           try {
             const yamlDoc = await textToDoc(node.frontMatter.content, {
               ...options,
-              parser: "yaml"
+              parser: 'yaml',
             });
-            docs.push([
-              "---",
-              hardline,
-              yamlDoc,
-              hardline,
-              "---"
-            ]);
+            docs.push(['---', hardline, yamlDoc, hardline, '---']);
           } catch (error) {
             // Fallback to unformatted YAML
-            docs.push([
-              "---",
-              hardline,
-              node.frontMatter.content.trim(),
-              hardline,
-              "---"
-            ]);
+            docs.push(['---', hardline, node.frontMatter.content.trim(), hardline, '---']);
           }
         } else if (node.frontMatter.delimiter === 'toml') {
           // TOML support - no built-in parser, so keep as-is
-          docs.push([
-            "+++",
-            hardline,
-            node.frontMatter.content.trim(),
-            hardline,
-            "+++"
-          ]);
+          docs.push(['+++', hardline, node.frontMatter.content.trim(), hardline, '+++']);
         }
       }
-      
+
       // Format content using markdown parser
       if (node.content && node.content.trim()) {
         try {
           const markdownDoc = await textToDoc(node.content, {
             ...options,
-            parser: "markdown"
+            parser: 'markdown',
           });
           docs.push(markdownDoc);
         } catch (error) {
@@ -217,10 +199,10 @@ function embedHugoPost(path, options) {
           docs.push(node.content.trim());
         }
       }
-      
+
       // Combine all sections
       if (docs.length === 0) {
-        return "";
+        return '';
       } else if (docs.length === 1) {
         return docs[0];
       } else {
@@ -229,7 +211,7 @@ function embedHugoPost(path, options) {
       }
     };
   }
-  
+
   return undefined;
 }
 
@@ -242,5 +224,5 @@ export default {
   languages,
   parsers,
   printers,
-  options
+  options,
 };

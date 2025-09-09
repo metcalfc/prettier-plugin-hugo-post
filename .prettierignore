@@ -1,0 +1,11 @@
+# Test files - should remain unformatted to test plugin behavior
+test-files/
+examples/
+
+# Build outputs
+dist/
+lib/
+node_modules/
+
+# Generated files
+package-lock.json

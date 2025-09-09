@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial implementation of prettier-plugin-hugo-post
 - Support for YAML, TOML, and JSON front matter formatting
 - Hugo template syntax formatting (variables, shortcodes, control structures)
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation and examples
 
 ### Features
+
 - Smart multi-format parsing for hybrid Hugo content files
 - Template-aware markdown formatting
 - Hugo shortcode support (`{{< >}}` and `{{% %}}`)
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-01-15
 
 ### Added
+
 - Initial release
 - Basic Hugo content file parsing and formatting
 - Support for common Hugo template patterns

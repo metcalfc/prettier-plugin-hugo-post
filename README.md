@@ -8,7 +8,7 @@ A Prettier plugin for formatting Hugo content files with YAML front matter, Mark
 ## Features
 
 - 🎯 **Consistent YAML formatting** using Prettier's built-in YAML parser
-- 📝 **Professional Markdown formatting** using Prettier's built-in Markdown parser  
+- 📝 **Professional Markdown formatting** using Prettier's built-in Markdown parser
 - 🚀 **Hugo template preservation** - keeps your shortcodes and templates intact
 - ⚙️ **Zero configuration** - works out of the box
 - 🔧 **Configurable** - integrates with your existing Prettier setup
@@ -28,6 +28,7 @@ npm install --save-dev prettier prettier-plugin-hugo-post
 Add the plugin to your Prettier configuration:
 
 **.prettierrc.json**
+
 ```json
 {
   "plugins": ["prettier-plugin-hugo-post"],
@@ -47,6 +48,7 @@ Add the plugin to your Prettier configuration:
 For Hugo projects, you might want more specific configuration:
 
 **.prettierrc.json**
+
 ```json
 {
   "plugins": ["prettier-plugin-hugo-post"],
@@ -81,15 +83,16 @@ npx prettier --check "content/**/*.md"
 ### Before and After
 
 **Input:**
+
 ```markdown
 ---
-title:    "My Blog Post"
-date:   2025-01-15
-tags:   [  "hugo" ,  "blog"  ]
+title: 'My Blog Post'
+date: 2025-01-15
+tags: ['hugo', 'blog']
 draft: false
 ---
 
-#    My Title
+# My Title
 
 This is some content with a Hugo shortcode:
 
@@ -101,11 +104,12 @@ And a Hugo template:
 ```
 
 **Output:**
+
 ```markdown
 ---
-title: "My Blog Post"
+title: 'My Blog Post'
 date: 2025-01-15
-tags: ["hugo", "blog"]
+tags: ['hugo', 'blog']
 draft: false
 ---
 
@@ -123,16 +127,19 @@ And a Hugo template:
 ## What Gets Formatted
 
 ### ✅ YAML Front Matter
+
 - Uses Prettier's built-in YAML parser
 - Consistent with your project's YAML formatting rules
 - Proper indentation, quoting, and spacing
 
-### ✅ Markdown Content  
+### ✅ Markdown Content
+
 - Uses Prettier's built-in Markdown parser
 - Professional heading, list, and paragraph formatting
 - Consistent code block formatting
 
 ### ✅ Hugo Templates Preserved
+
 - Hugo shortcodes: `{{< shortcode >}}`, `{{% shortcode %}}`
 - Hugo variables: `{{ .Title }}`, `{{ .Params.author }}`
 - Hugo functions: `{{ with .Params.featured }}`
@@ -147,6 +154,7 @@ And a Hugo template:
 3. Configure Prettier as your default formatter for Markdown files
 
 **settings.json**
+
 ```json
 {
   "[markdown]": {
@@ -158,6 +166,7 @@ And a Hugo template:
 ### Other Editors
 
 This plugin works with any editor that supports Prettier:
+
 - [WebStorm/IntelliJ IDEA](https://prettier.io/docs/en/webstorm.html)
 - [Vim](https://prettier.io/docs/en/vim.html)
 - [Emacs](https://prettier.io/docs/en/emacs.html)
@@ -169,7 +178,7 @@ Use standard Prettier ignore comments:
 
 ```markdown
 ---
-title: "My Post"
+title: 'My Post'
 ---
 
 <!-- prettier-ignore -->
@@ -210,12 +219,12 @@ npm run format && hugo build
 
 ## Comparison with Alternatives
 
-| Feature | prettier-plugin-hugo-post | Standard Prettier |
-|---------|---------------------------|-------------------|
-| YAML Front Matter | ✅ Formatted | ❌ Ignored |
-| Markdown Content | ✅ Formatted | ✅ Formatted |
-| Hugo Templates | ✅ Preserved | ❌ May break |
-| Zero Config | ✅ Yes | ❌ Requires setup |
+| Feature           | prettier-plugin-hugo-post | Standard Prettier |
+| ----------------- | ------------------------- | ----------------- |
+| YAML Front Matter | ✅ Formatted              | ❌ Ignored        |
+| Markdown Content  | ✅ Formatted              | ✅ Formatted      |
+| Hugo Templates    | ✅ Preserved              | ❌ May break      |
+| Zero Config       | ✅ Yes                    | ❌ Requires setup |
 
 ## Troubleshooting
 
@@ -227,7 +236,7 @@ Make sure the plugin is installed in the same scope (local vs global) as Prettie
 # If using local prettier
 npm install --save-dev prettier-plugin-hugo-post
 
-# If using global prettier  
+# If using global prettier
 npm install -g prettier-plugin-hugo-post
 ```
 
