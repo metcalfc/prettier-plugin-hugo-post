@@ -4,8 +4,10 @@ examples/
 **/*.test.md
 **/*.spec.md
 
+# README contains examples that should show unformatted Hugo content
+README.md
+
 # Documentation files that should use standard markdown formatting
-!README.md
 !CONTRIBUTING.md
 !CHANGELOG.md
 !PUBLISHING.md  

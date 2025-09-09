@@ -275,25 +275,27 @@ This post is featured!
 `;
 
       const result = await formatCode(input);
-      
+
       // Check YAML formatting
       expect(result).toContain('title: "Complex Post"');
       expect(result).toContain('tags: ["test", "hugo"]');
-      
+
       // Check template variables
       expect(result).toContain('{{ .Title }}');
       expect(result).toContain('{{ .Params.author }}');
       expect(result).toContain('{{ .Date.Format "January 2, 2006" }}');
-      
+
       // Check shortcodes
-      expect(result).toContain('{{< figure src="/hero.jpg " alt="Hero Image " class="featured" >}}');
+      expect(result).toContain(
+        '{{< figure src="/hero.jpg " alt="Hero Image " class="featured" >}}'
+      );
       expect(result).toContain('{{< highlight go "linenos=table,hl_lines=2 3" >}}');
       expect(result).toContain('{{% notice warning %}}');
-      
+
       // Check template control structures
       expect(result).toContain('{{ if .Params.featured }}');
       expect(result).toContain('{{ end }}');
-      
+
       // Check markdown formatting
       expect(result).toContain('# {{ .Title }}');
       expect(result).toContain('## Code Example');
@@ -372,7 +374,9 @@ title: "Test"
 `;
 
       const result = await formatCode(input);
-      expect(result).toContain('{{< figure src="/path/to/image.jpg " alt="Image with "quotes " and \'apostrophes\'" >}}');
+      expect(result).toContain(
+        '{{< figure src="/path/to/image.jpg " alt="Image with "quotes " and \'apostrophes\'" >}}'
+      );
     });
 
     test('preserves content inside block shortcodes', async () => {

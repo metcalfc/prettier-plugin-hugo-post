@@ -195,7 +195,7 @@ async function formatYaml(yamlContent, options) {
 async function formatHugoContent(content, options) {
   // First, format all Hugo templates with regex
   content = formatHugoTemplates(content);
-  
+
   // Then format as markdown using Prettier
   try {
     const { format } = await import('prettier');
@@ -217,24 +217,24 @@ function formatHugoTemplates(content) {
   // Handle shortcodes: {{< shortcode param="value" >}}
   content = content.replace(/\{\{<\s*([^>]*?)\s*>\}\}/g, (match, inner) => {
     inner = inner.trim();
-    
+
     // Handle self-closing shortcodes - remove trailing /
     inner = inner.replace(/\/$/, '');
-    
+
     // Fix only the specific patterns we know are broken
     // Pattern: "value"param= -> "value" param=
     inner = inner.replace(/("[^"]*")([a-z][a-z]*=)/gi, '$1 $2');
     inner = inner.replace(/('[^']*')([a-z][a-z]*=)/gi, '$1 $2');
-    
-    // Pattern: word"value" -> word "value"  
+
+    // Pattern: word"value" -> word "value"
     inner = inner.replace(/([a-z]+)("[^"]*")/gi, '$1 $2');
-    
+
     // Normalize spaces
     inner = inner.replace(/\s+/g, ' ').trim();
-    
+
     // Split into tokens now that spacing is normalized
     const tokens = inner.split(' ').filter(token => token.trim());
-    
+
     return `{{< ${tokens.join(' ')} >}}`;
   });
 
@@ -249,11 +249,11 @@ function formatHugoTemplates(content) {
     // Check for whitespace control (- at start or end)
     const startControl = match.match(/^\{\{-/) ? '{{- ' : '{{ ';
     const endControl = match.match(/-\}\}$/) ? ' -}}' : ' }}';
-    
+
     inner = inner.replace(/^-\s*/, '').replace(/\s*-$/, ''); // Remove control chars
     inner = inner.trim().replace(/\s+/g, ' ');
     inner = inner.replace(/\s*\|\s*/g, ' | ');
-    
+
     return `${startControl}${inner}${endControl}`;
   });
 
