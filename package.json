@@ -1,0 +1,52 @@
+{
+  "name": "prettier-plugin-hugo-post",
+  "version": "0.1.0",
+  "description": "A Prettier plugin for Hugo content files with YAML front matter, Markdown content, and Go template syntax",
+  "main": "src/index.js",
+  "type": "module",
+  "keywords": [
+    "prettier",
+    "plugin", 
+    "hugo",
+    "markdown",
+    "yaml",
+    "go-template",
+    "front-matter",
+    "static-site-generator"
+  ],
+  "author": "Chad Metcalf <chad@metcalfc.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metcalfc/prettier-plugin-hugo-post.git"
+  },
+  "bugs": {
+    "url": "https://github.com/metcalfc/prettier-plugin-hugo-post/issues"
+  },
+  "homepage": "https://github.com/metcalfc/prettier-plugin-hugo-post#readme",
+  "engines": {
+    "node": ">=14"
+  },
+  "peerDependencies": {
+    "prettier": ">=3.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "jest": "^29.0.0",
+    "@babel/core": "^7.22.0",
+    "@babel/preset-env": "^7.22.0"
+  },
+  "dependencies": {},
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "jest --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "example": "prettier --plugin ./src/index.js examples/test.md"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
+}

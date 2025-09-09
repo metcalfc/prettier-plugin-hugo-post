@@ -1,0 +1,14 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "files.associations": {
+    "*.md": "markdown"
+  },
+  "prettier.requireConfig": true,
+  "prettier.useEditorConfig": false,
+  "jest.jestCommandLine": "npm test",
+  "jest.autoRun": "watch"
+}
