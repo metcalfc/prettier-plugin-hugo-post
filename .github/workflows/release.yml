@@ -33,7 +33,7 @@ jobs:
         id: changelog
         uses: metcalfc/changelog-generator@v4.6.2
         with:
-          myToken: ${{ secrets.GITHUB_TOKEN }}
+          myToken: ${{ secrets.MY_GITHUB_TOKEN }}
 
       - name: Create Release
         id: create_release
@@ -42,7 +42,7 @@ jobs:
           tag: ${{ github.ref }}
           name: Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changelog }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
 
       - name: Publish to npm
         run: npm publish
