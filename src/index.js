@@ -11,7 +11,7 @@ export const languages = [
   {
     name: 'Hugo Post',
     parsers: ['hugo-post'],
-    extensions: ['.md'],
+    extensions: ['.md', '.hugo'],
     filenames: [],
   },
 ];
@@ -28,7 +28,6 @@ export const parsers = {
 export const printers = {
   'hugo-post-ast': {
     print: printHugoPost,
-    embed: embedHugoPost,
   },
 };
 
@@ -147,78 +146,124 @@ function classifyTemplate(template) {
 }
 
 /**
- * Print Hugo post content - now handled by embed function
+ * Print Hugo post content
  */
-function printHugoPost(path, options) {
+async function printHugoPost(path, options, print) {
   const node = path.getValue();
+  const parts = [];
 
-  // The actual formatting is handled by the embed function
-  // This should not be called when embed is used
-  return node.source || '';
+  // Format front matter
+  if (node.frontMatter) {
+    if (node.frontMatter.delimiter === 'yaml') {
+      const formattedYaml = await formatYaml(node.frontMatter.content, options);
+      parts.push(`---\n${formattedYaml}\n---`);
+    } else if (node.frontMatter.delimiter === 'toml') {
+      parts.push(`+++\n${node.frontMatter.content.trim()}\n+++`);
+    }
+  }
+
+  // Format content
+  if (node.content && node.content.trim()) {
+    const formattedContent = await formatHugoContent(node.content, options);
+    parts.push(formattedContent);
+  }
+
+  return parts.join('\n\n');
 }
 
 /**
- * Embed function - properly formats sections using Prettier's parsers
+ * Format YAML front matter using Prettier
  */
-function embedHugoPost(path, options) {
-  const node = path.getValue();
-
-  if (node.type === 'hugo-post') {
-    return async textToDoc => {
-      const docs = [];
-
-      // Format front matter using appropriate parser
-      if (node.frontMatter) {
-        if (node.frontMatter.delimiter === 'yaml') {
-          try {
-            const yamlDoc = await textToDoc(node.frontMatter.content, {
-              ...options,
-              parser: 'yaml',
-            });
-            docs.push(['---', hardline, yamlDoc, hardline, '---']);
-          } catch (error) {
-            // Fallback to unformatted YAML
-            docs.push(['---', hardline, node.frontMatter.content.trim(), hardline, '---']);
-          }
-        } else if (node.frontMatter.delimiter === 'toml') {
-          // TOML support - no built-in parser, so keep as-is
-          docs.push(['+++', hardline, node.frontMatter.content.trim(), hardline, '+++']);
-        }
-      }
-
-      // Format content using markdown parser
-      if (node.content && node.content.trim()) {
-        try {
-          const markdownDoc = await textToDoc(node.content, {
-            ...options,
-            parser: 'markdown',
-          });
-          docs.push(markdownDoc);
-        } catch (error) {
-          // Fallback to unformatted content
-          docs.push(node.content.trim());
-        }
-      }
-
-      // Combine all sections
-      if (docs.length === 0) {
-        return '';
-      } else if (docs.length === 1) {
-        return docs[0];
-      } else {
-        // Join sections with double newlines
-        return [docs[0], hardline, hardline, docs[1]];
-      }
-    };
+async function formatYaml(yamlContent, options) {
+  try {
+    // Use dynamic import for ES modules
+    const { format } = await import('prettier');
+    const result = await format(yamlContent, {
+      ...options,
+      parser: 'yaml',
+    });
+    return result.trim();
+  } catch (error) {
+    // Fallback to basic cleanup if Prettier fails
+    return yamlContent.trim();
   }
-
-  return undefined;
 }
 
-// Template handling removed for now - letting markdown parser handle Hugo templates as-is
-// This can be enhanced later to use go-template parser for individual template segments
+/**
+ * Format Hugo content (markdown + templates)
+ */
+async function formatHugoContent(content, options) {
+  // First, format all Hugo templates with regex
+  content = formatHugoTemplates(content);
+  
+  // Then format as markdown using Prettier
+  try {
+    const { format } = await import('prettier');
+    const result = await format(content, {
+      ...options,
+      parser: 'markdown',
+    });
+    return result.trim();
+  } catch (error) {
+    // Fallback to unformatted content
+    return content.trim();
+  }
+}
 
-// Template formatting is now handled by the go-template parser
+/**
+ * Format Hugo templates manually using regex
+ */
+function formatHugoTemplates(content) {
+  // Handle shortcodes: {{< shortcode param="value" >}}
+  content = content.replace(/\{\{<\s*([^>]*?)\s*>\}\}/g, (match, inner) => {
+    inner = inner.trim();
+    
+    // Handle self-closing shortcodes - remove trailing /
+    inner = inner.replace(/\/$/, '');
+    
+    // Fix only the specific patterns we know are broken
+    // Pattern: "value"param= -> "value" param=
+    inner = inner.replace(/("[^"]*")([a-z][a-z]*=)/gi, '$1 $2');
+    inner = inner.replace(/('[^']*')([a-z][a-z]*=)/gi, '$1 $2');
+    
+    // Pattern: word"value" -> word "value"  
+    inner = inner.replace(/([a-z]+)("[^"]*")/gi, '$1 $2');
+    
+    // Normalize spaces
+    inner = inner.replace(/\s+/g, ' ').trim();
+    
+    // Split into tokens now that spacing is normalized
+    const tokens = inner.split(' ').filter(token => token.trim());
+    
+    return `{{< ${tokens.join(' ')} >}}`;
+  });
+
+  // Handle {{% %}} shortcodes
+  content = content.replace(/\{\{%\s*([^%]*?)\s*%\}\}/g, (match, inner) => {
+    inner = inner.trim().replace(/\s+/g, ' ');
+    return `{{% ${inner} %}}`;
+  });
+
+  // Handle regular Hugo variables: {{ .Variable }}
+  content = content.replace(/\{\{(?!<|%|\/\*)\s*([^}]*?)\s*\}\}/g, (match, inner) => {
+    // Check for whitespace control (- at start or end)
+    const startControl = match.match(/^\{\{-/) ? '{{- ' : '{{ ';
+    const endControl = match.match(/-\}\}$/) ? ' -}}' : ' }}';
+    
+    inner = inner.replace(/^-\s*/, '').replace(/\s*-$/, ''); // Remove control chars
+    inner = inner.trim().replace(/\s+/g, ' ');
+    inner = inner.replace(/\s*\|\s*/g, ' | ');
+    
+    return `${startControl}${inner}${endControl}`;
+  });
+
+  // Handle comments: {{/* comment */}}
+  content = content.replace(/\{\{\/\*\s*([\s\S]*?)\s*\*\/\}\}/g, (match, inner) => {
+    return `{{/* ${inner.trim()} */}}`;
+  });
+
+  return content;
+}
 
 export default {
   languages,
