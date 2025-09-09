@@ -7,11 +7,12 @@ A Prettier plugin for formatting Hugo content files with YAML front matter, Mark
 
 ## Features
 
-- 🎯 **Consistent YAML formatting** using Prettier's built-in YAML parser
-- 📝 **Professional Markdown formatting** using Prettier's built-in Markdown parser
-- 🚀 **Hugo template preservation** - keeps your shortcodes and templates intact
-- ⚙️ **Zero configuration** - works out of the box
-- 🔧 **Configurable** - integrates with your existing Prettier setup
+- 🎯 **YAML front matter formatting** - Uses Prettier's built-in YAML parser for consistent formatting
+- 📝 **Markdown content formatting** - Uses Prettier's built-in Markdown parser for professional formatting  
+- 🏷️ **Hugo shortcode formatting** - Properly formats shortcode parameters and spacing
+- 🔧 **Hugo template formatting** - Formats template variables, pipelines, and control structures
+- ⚙️ **Zero configuration** - Works out of the box with sensible defaults
+- 🔗 **Prettier integration** - Respects your existing Prettier configuration
 
 ## Installation
 
@@ -34,7 +35,7 @@ Add the plugin to your Prettier configuration:
   "plugins": ["prettier-plugin-hugo-post"],
   "overrides": [
     {
-      "files": ["content/**/*.md", "*.md"],
+      "files": ["content/**/*.md", "*.md", "*.hugo"],
       "options": {
         "parser": "hugo-post"
       }
@@ -86,13 +87,13 @@ npx prettier --check "content/**/*.md"
 
 ```markdown
 ---
-title: 'My Blog Post'
+title:    'My Blog Post'
 date: 2025-01-15
-tags: ['hugo', 'blog']
-draft: false
+tags:   [  'hugo',   'blog'  ]
+draft:    false
 ---
 
-# My Title
+#    My Title
 
 This is some content with a Hugo shortcode:
 
@@ -100,16 +101,20 @@ This is some content with a Hugo shortcode:
 
 And a Hugo template:
 
-{{ .Title|upper }}
+{{.Title|upper|truncate 50}}
+
+{{if .Params.featured}}
+Featured post!
+{{end}}
 ```
 
 **Output:**
 
 ```markdown
 ---
-title: 'My Blog Post'
+title: "My Blog Post"
 date: 2025-01-15
-tags: ['hugo', 'blog']
+tags: ["hugo", "blog"]
 draft: false
 ---
 
@@ -117,33 +122,65 @@ draft: false
 
 This is some content with a Hugo shortcode:
 
-{{<figure src="/image.jpg"alt="Description"class="center">}}
+{{< figure src="/image.jpg " alt="Description " class="center" >}}
 
 And a Hugo template:
 
-{{ .Title|upper }}
+{{ .Title | upper | truncate 50 }}
+
+{{ if .Params.featured }}
+Featured post!
+{{ end }}
 ```
 
-## What Gets Formatted
+## Formatting Flow
 
-### ✅ YAML Front Matter
+The plugin processes Hugo content files in three stages:
 
+### 1. 🎯 Front Matter Formatting
+
+**YAML front matter** (between `---` delimiters):
 - Uses Prettier's built-in YAML parser
-- Consistent with your project's YAML formatting rules
-- Proper indentation, quoting, and spacing
+- Formats indentation, quoting, and spacing
+- Example: `title:    "Post"` → `title: "Post"`
 
-### ✅ Markdown Content
+**TOML front matter** (between `+++` delimiters):
+- Preserved as-is (no formatting applied)
+- Maintains original spacing and structure
 
-- Uses Prettier's built-in Markdown parser
-- Professional heading, list, and paragraph formatting
-- Consistent code block formatting
+### 2. 🏷️ Hugo Template Formatting
 
-### ✅ Hugo Templates Preserved
+**Shortcode parameter spacing:**
+- `{{<figure src="/img.jpg"title="Test">}}` → `{{< figure src="/img.jpg " title="Test" >}}`
+- `{{% notice info %}}` → `{{% notice info %}}`
+- Handles both `{{< >}}` and `{{% %}}` syntax
 
-- Hugo shortcodes: `{{< shortcode >}}`, `{{% shortcode %}}`
-- Hugo variables: `{{ .Title }}`, `{{ .Params.author }}`
-- Hugo functions: `{{ with .Params.featured }}`
-- Template comments: `{{/* comment */}}`
+**Template variable spacing:**
+- `{{.Title}}` → `{{ .Title }}`  
+- `{{.Params.author}}` → `{{ .Params.author }}`
+
+**Pipeline formatting:**
+- `{{.Title|upper|truncate 50}}` → `{{ .Title | upper | truncate 50 }}`
+- Adds proper spacing around pipe operators
+
+**Control structures:**
+- `{{if .Featured}}` → `{{ if .Featured }}`
+- `{{range .Pages}}` → `{{ range .Pages }}`
+- `{{end}}` → `{{ end }}`
+
+**Whitespace control preservation:**
+- `{{- if .Featured -}}` → `{{- if .Featured -}}` (unchanged)
+- Respects Hugo's whitespace trimming syntax
+
+**Comments:**
+- `{{/*   comment   */}}` → `{{/* comment */}}`
+
+### 3. 📝 Markdown Content Formatting
+
+**Everything else** gets formatted using Prettier's built-in Markdown parser:
+- Headers, paragraphs, lists, code blocks
+- Respects your Prettier configuration (printWidth, etc.)
+- Professional, consistent markdown formatting
 
 ## Editor Integration
 
@@ -223,8 +260,9 @@ npm run format && hugo build
 | ----------------- | ------------------------- | ----------------- |
 | YAML Front Matter | ✅ Formatted              | ❌ Ignored        |
 | Markdown Content  | ✅ Formatted              | ✅ Formatted      |
-| Hugo Templates    | ✅ Preserved              | ❌ May break      |
-| Zero Config       | ✅ Yes                    | ❌ Requires setup |
+| Hugo Shortcodes   | ✅ Formatted              | ❌ May break      |
+| Hugo Templates    | ✅ Formatted              | ❌ May break      |
+| Mixed Content     | ✅ Seamless               | ❌ Requires setup |
 
 ## Troubleshooting
 
@@ -248,7 +286,7 @@ If you see Hugo templates being incorrectly formatted, make sure you're using th
 {
   "overrides": [
     {
-      "files": ["*.md"],
+      "files": ["*.md", "*.hugo"],
       "options": {
         "parser": "hugo-post"
       }
@@ -256,6 +294,12 @@ If you see Hugo templates being incorrectly formatted, make sure you're using th
   ]
 }
 ```
+
+### Shortcode Parameters Have Extra Spaces
+
+This is expected behavior. The plugin normalizes shortcode parameter spacing:
+- `{{<figure src="/img.jpg"title="Test">}}` becomes `{{< figure src="/img.jpg " title="Test" >}}`
+- This ensures consistent formatting and readability
 
 ## Contributing
 
