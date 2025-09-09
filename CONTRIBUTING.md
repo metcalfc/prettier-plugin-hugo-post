@@ -49,6 +49,7 @@ npm run example
 1. Push your branch to your fork
 2. Create a pull request with a clear description of your changes
 3. Ensure all CI checks pass
+4. Once merged, maintainers will handle versioning and releases
 
 ## Code Style
 
