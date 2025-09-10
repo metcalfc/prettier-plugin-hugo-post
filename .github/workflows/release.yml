@@ -9,24 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  validate-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify all checks passed
-        run: |
-          # Query GitHub API to ensure all checks passed for this commit
-          gh api repos/${{ github.repository }}/commits/${{ github.sha }}/status \
-            --jq '.state' | grep -q "success" || {
-            echo "❌ CI checks have not passed for this commit"
-            echo "Please ensure all CI checks pass before creating a release tag"
-            exit 1
-          }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   release:
-    needs: validate-tests
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,11 +20,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Test plugin example
+        run: npm run example
 
       - name: Generate changelog
         id: changelog
