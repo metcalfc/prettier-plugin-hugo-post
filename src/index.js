@@ -83,6 +83,16 @@ function splitFrontMatter(text) {
     };
   }
 
+  // JSON front matter
+  const jsonMatch = text.match(/^{\r?\n([\s\S]*?)\r?\n}\r?\n([\s\S]*)$/);
+  if (jsonMatch) {
+    return {
+      frontMatter: `{\n${jsonMatch[1]}\n}`,
+      delimiter: 'json',
+      content: jsonMatch[2],
+    };
+  }
+
   // No front matter
   return {
     frontMatter: null,
@@ -158,7 +168,11 @@ async function printHugoPost(path, options, print) {
       const formattedYaml = await formatYaml(node.frontMatter.content, options);
       parts.push(`---\n${formattedYaml}\n---`);
     } else if (node.frontMatter.delimiter === 'toml') {
-      parts.push(`+++\n${node.frontMatter.content.trim()}\n+++`);
+      const formattedToml = await formatToml(node.frontMatter.content, options);
+      parts.push(`+++\n${formattedToml}\n+++`);
+    } else if (node.frontMatter.delimiter === 'json') {
+      const formattedJson = await formatJson(node.frontMatter.content, options);
+      parts.push(formattedJson);
     }
   }
 
@@ -186,6 +200,45 @@ async function formatYaml(yamlContent, options) {
   } catch (error) {
     // Fallback to basic cleanup if Prettier fails
     return yamlContent.trim();
+  }
+}
+
+/**
+ * Format TOML front matter using prettier-plugin-toml
+ */
+async function formatToml(tomlContent, options) {
+  try {
+    // Use dynamic import for ES modules
+    const { format } = await import('prettier');
+    const result = await format(tomlContent, {
+      ...options,
+      parser: 'toml',
+      plugins: ['prettier-plugin-toml'],
+    });
+    return result.trim();
+  } catch (error) {
+    // Fallback to basic cleanup if Prettier fails
+    console.warn('TOML formatting failed:', error.message);
+    return tomlContent.trim();
+  }
+}
+
+/**
+ * Format JSON front matter using Prettier's built-in JSON parser
+ */
+async function formatJson(jsonContent, options) {
+  try {
+    // Use dynamic import for ES modules
+    const { format } = await import('prettier');
+    const result = await format(jsonContent, {
+      ...options,
+      parser: 'json',
+    });
+    return result.trim();
+  } catch (error) {
+    // Fallback to basic cleanup if Prettier fails
+    console.warn('JSON formatting failed:', error.message);
+    return jsonContent.trim();
   }
 }
 

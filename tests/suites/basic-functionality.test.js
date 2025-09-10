@@ -22,14 +22,44 @@ data:   [ 1,  2,   3 ]
         ],
       },
       {
-        name: 'handles TOML front matter without formatting',
+        name: 'formats TOML front matter correctly',
         input: `+++
-title = "Hello World"
-date = 2023-01-01
+title   =   "TOML Test"
+description =    "Testing TOML formatting"
+draft   =false
+tags    = [   "test",    "toml"   ]
+author = {name="John", email="john@test.com"}
 +++
 
-# Content here`,
-        shouldContain: ['title = "Hello World"', 'date = 2023-01-01', '# Content here'],
+# {{ .Title }}`,
+        shouldContain: [
+          'title = "TOML Test"',
+          'description = "Testing TOML formatting"',
+          'draft = false',
+          'tags = ["test", "toml"]',
+          'author = { name = "John", email = "john@test.com" }',
+          '# {{ .Title }}',
+        ],
+      },
+      {
+        name: 'formats JSON front matter correctly',
+        input: `{
+    "title":   "JSON Test",
+"description": "Testing JSON formatting",
+ "draft":false,
+   "tags": [   "test",    "json"   ],
+      "author": {"name":"Jane", "email":"jane@test.com"}
+}
+
+# {{ .Title }}`,
+        shouldContain: [
+          '"title": "JSON Test"',
+          '"description": "Testing JSON formatting"',
+          '"draft": false',
+          '"tags": ["test", "json"]',
+          '"author": { "name": "Jane", "email": "jane@test.com" }',
+          '# {{ .Title }}',
+        ],
       },
       {
         name: 'handles content without front matter',
