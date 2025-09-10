@@ -1,0 +1,129 @@
+import { formatCode, runTableDrivenTests } from '../helpers.js';
+
+describe('Basic Hugo Functionality', () => {
+  describe('Front Matter Parsing', () => {
+    runTableDrivenTests([
+      {
+        name: 'parses and formats YAML front matter',
+        input: `---
+title:    "Hello World"
+date:   2023-01-01
+tags:  [  "test",   "sample"  ]
+data:   [ 1,  2,   3 ]
+---
+
+# Content here`,
+        shouldContain: [
+          'title: "Hello World"',
+          'date: 2023-01-01',
+          'tags: ["test", "sample"]',
+          'data: [1, 2, 3]',
+          '# Content here',
+        ],
+      },
+      {
+        name: 'handles TOML front matter without formatting',
+        input: `+++
+title = "Hello World"
+date = 2023-01-01
++++
+
+# Content here`,
+        shouldContain: ['title = "Hello World"', 'date = 2023-01-01', '# Content here'],
+      },
+      {
+        name: 'handles content without front matter',
+        input: '# Just a title\n\nSome content here.',
+        shouldContain: ['# Just a title', 'Some content here.'],
+      },
+      {
+        name: 'handles malformed YAML gracefully',
+        input: `---
+title: "Test
+invalid yaml: content
+---
+
+# Content`,
+        shouldContain: ['# Content'],
+      },
+    ]);
+  });
+
+  describe('Hugo Shortcode Formatting', () => {
+    runTableDrivenTests([
+      {
+        name: 'formats shortcodes with proper spacing',
+        input: '{{<figure src="/test.jpg"alt="test">}}',
+        shouldContain: ['{{< figure src="/test.jpg" alt="test" >}}'],
+      },
+      {
+        name: 'formats shortcodes with mixed quote styles',
+        input: `{{<shortcode param1='value1'param2="value2">}}`,
+        shouldContain: [`{{< shortcode param1='value1' param2="value2" >}}`],
+      },
+      {
+        name: 'formats shortcodes with excessive whitespace',
+        input: '{{<   figure    src="/test.jpg"     >}}',
+        shouldContain: ['{{< figure src="/test.jpg" >}}'],
+      },
+      {
+        name: 'formats {{% %}} style shortcodes',
+        input: '{{% notice   info %}}Content{{% /notice %}}',
+        shouldContain: ['{{% notice info %}}', 'Content', '{{% /notice %}}'],
+      },
+      {
+        name: 'handles shortcodes with no parameters',
+        input: '{{<br>}}',
+        shouldContain: ['{{< br >}}'],
+      },
+      {
+        name: 'handles self-closing shortcodes',
+        input: '{{<figure src="/test.jpg"/>}}',
+        shouldContain: ['{{< figure src="/test.jpg" >}}'],
+      },
+      {
+        name: 'removes spaces inside quoted parameter values',
+        input: '{{< shortcode param=" spaced value " >}}',
+        shouldContain: ['{{< shortcode param="spaced value" >}}'],
+      },
+      {
+        name: 'handles mixed quote styles to avoid escaping',
+        input: `{{< shortcode text="He said 'hello'" title='The "Best" Post' >}}`,
+        shouldContain: [`{{< shortcode text="He said 'hello'" title='The "Best" Post' >}}`],
+      },
+    ]);
+  });
+
+  describe('Hugo Template Variables', () => {
+    runTableDrivenTests([
+      {
+        name: 'formats template variables with proper spacing',
+        input: '{{.Title}}',
+        shouldContain: ['{{ .Title }}'],
+      },
+      {
+        name: 'formats template pipelines',
+        input: '{{.Title|upper|truncate 50}}',
+        shouldContain: ['{{ .Title | upper | truncate 50 }}'],
+      },
+      {
+        name: 'handles template control structures',
+        input: '{{if .IsHome}}Home{{else}}Not Home{{end}}',
+        shouldContain: ['{{ if .IsHome }}', 'Home', '{{ else }}', 'Not Home', '{{ end }}'],
+      },
+      {
+        name: 'preserves whitespace control in templates',
+        input: '{{- .Title -}}',
+        shouldContain: ['{{- .Title -}}'],
+      },
+    ]);
+  });
+
+  describe('Hugo Comments', () => {
+    test('formats template comments', async () => {
+      const input = '{{/* This is a comment */}}';
+      const result = await formatCode(input);
+      expect(result).toContain('{{/* This is a comment */}}');
+    });
+  });
+});
