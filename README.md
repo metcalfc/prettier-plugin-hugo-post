@@ -231,7 +231,8 @@ Hugo templates with enhanced formatting:
 {{ range .Pages }}
 
 - {{ .Title }}
-  {{ end }}
+
+{{ end }}
 ```
 
 ### Front Matter Format Examples

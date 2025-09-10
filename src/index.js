@@ -548,11 +548,46 @@ function formatHugoTemplates(content) {
       }
     });
 
+    // Ensure block-level control structures have proper line breaks to prevent
+    // markdown formatter from treating them as part of list items or other constructs
+    content = ensureProperBlockSpacing(content);
+
     return content;
   } catch (error) {
     console.error(`Critical error in formatHugoTemplates: ${error.message}`);
     return content; // Return original content on critical failure
   }
+}
+
+/**
+ * Ensure block-level control structures have proper spacing to prevent
+ * Prettier's markdown formatter from treating them as part of other constructs
+ */
+function ensureProperBlockSpacing(content) {
+  // Split content into lines for analysis
+  const lines = content.split('\n');
+  const result = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const prevLine = i > 0 ? lines[i - 1] : '';
+    const trimmedLine = line.trim();
+
+    // Check if this line is an end control that should be standalone
+    const isEndControl = trimmedLine.match(/^\{\{\s*end\s*\}\}$/);
+    const prevIsListItem = prevLine.trim().match(/^[-*+]\s/);
+
+    // If previous line is a list item and current line is {{ end }},
+    // add blank line to prevent markdown formatter from indenting the {{ end }}
+    if (isEndControl && prevIsListItem) {
+      result.push('');
+      result.push(line);
+    } else {
+      result.push(line);
+    }
+  }
+
+  return result.join('\n');
 }
 
 export default {

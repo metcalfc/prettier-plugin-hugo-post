@@ -169,6 +169,54 @@ invalid yaml: content
     ]);
   });
 
+  describe('Template-Markdown Interaction', () => {
+    runTableDrivenTests([
+      {
+        name: 'prevents {{ end }} from being indented under list items',
+        input: `---
+title: "Test"
+---
+
+{{ range .Pages }}
+- {{ .Title }}
+{{ end }}`,
+        shouldContain: ['{{ range .Pages }}', '- {{ .Title }}', '{{ end }}'],
+        shouldNotContain: ['  {{ end }}'], // Should not be indented
+      },
+      {
+        name: 'handles multiple control structures with lists',
+        input: `{{ if .IsHome }}
+- Home item
+{{ else }}
+- Other item
+{{ end }}`,
+        shouldContain: [
+          '{{ if .IsHome }}',
+          '- Home item',
+          '{{ else }}',
+          '- Other item',
+          '{{ end }}',
+        ],
+        shouldNotContain: ['  {{ else }}', '  {{ end }}'],
+      },
+      {
+        name: 'preserves proper spacing around block templates',
+        input: `Some content
+{{ range .Pages }}
+- {{ .Title }}
+{{ end }}
+More content`,
+        shouldContain: [
+          'Some content',
+          '{{ range .Pages }}',
+          '- {{ .Title }}',
+          '{{ end }}',
+          'More content',
+        ],
+      },
+    ]);
+  });
+
   describe('Hugo Comments', () => {
     test('formats template comments', async () => {
       const input = '{{/* This is a comment */}}';
