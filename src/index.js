@@ -226,8 +226,8 @@ function formatHugoTemplates(content) {
     inner = inner.replace(/("[^"]*")([a-z][a-z]*=)/gi, '$1 $2');
     inner = inner.replace(/('[^']*')([a-z][a-z]*=)/gi, '$1 $2');
 
-    // Pattern: word"value" -> word "value"
-    inner = inner.replace(/([a-z]+)("[^"]*")/gi, '$1 $2');
+    // Pattern: word"value" -> word "value" (but not param="value")
+    inner = inner.replace(/([a-z]+)(?<!=)("[^"]*")/gi, '$1 $2');
 
     // Normalize spaces
     inner = inner.replace(/\s+/g, ' ').trim();
