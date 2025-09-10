@@ -213,56 +213,181 @@ async function formatHugoContent(content, options) {
 /**
  * Format Hugo templates manually using regex
  */
+/**
+ * Tokenization-based Hugo shortcode formatter
+ * Treats shortcode content as a mini-language to parse properly
+ */
+function tokenizeShortcode(content) {
+  const tokens = [];
+  let i = 0;
+  const maxIterations = Math.max(1000, content.length * 2); // Safety limit
+  let iterations = 0;
+
+  while (i < content.length) {
+    iterations++;
+    if (iterations > maxIterations) {
+      console.warn(
+        `Tokenizer stopped at position ${i} to prevent infinite loop. Content: ${content.substring(i, i + 20)}...`
+      );
+      break;
+    }
+
+    const char = content[i];
+
+    // Skip whitespace
+    if (/\s/.test(char)) {
+      i++;
+      continue;
+    }
+
+    // Handle quoted strings (with escape support)
+    if (char === '"' || char === "'") {
+      const quote = char;
+      let value = quote;
+      i++; // Skip opening quote
+
+      while (i < content.length && iterations < maxIterations) {
+        iterations++;
+        const current = content[i];
+
+        if (current === '\\' && i + 1 < content.length) {
+          // Handle escaped characters
+          value += current + content[i + 1];
+          i += 2;
+        } else if (current === quote) {
+          // Found closing quote
+          value += current;
+          i++;
+          break;
+        } else {
+          value += current;
+          i++;
+        }
+      }
+
+      // Trim whitespace inside quotes but preserve escaped content
+      const inner = value.slice(1, -1); // Remove quotes
+      const trimmed = inner.replace(/^\s+|\s+$/g, ''); // Trim but preserve escapes
+      tokens.push({ type: 'quoted', value: quote + trimmed + quote });
+      continue;
+    }
+
+    // Handle unquoted tokens (parameter names, shortcode name, etc.)
+    let token = '';
+    while (i < content.length && !/[\s"']/.test(content[i]) && iterations < maxIterations) {
+      iterations++;
+      token += content[i];
+      i++;
+    }
+
+    if (token) {
+      tokens.push({ type: 'unquoted', value: token });
+    }
+  }
+
+  return tokens;
+}
+
+function formatShortcodeFromTokens(tokens) {
+  if (tokens.length === 0) return '';
+
+  const result = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const nextToken = tokens[i + 1];
+
+    // Add the token value
+    result.push(token.value);
+
+    // Determine if we need a space after this token
+    if (nextToken) {
+      // Always add space between tokens, with special cases:
+
+      // Case 1: Current token ends with = (parameter assignment)
+      if (token.value.endsWith('=')) {
+        // No space between param= and "value"
+        continue;
+      }
+
+      // Case 2: Next token starts with =
+      if (nextToken.value.startsWith('=')) {
+        // No space between param and =value
+        continue;
+      }
+
+      // Case 3: Handle the "word followed by quote" case
+      // If current token is unquoted word and next is quoted, add space
+      if (token.type === 'unquoted' && nextToken.type === 'quoted') {
+        result.push(' ');
+        continue;
+      }
+
+      // Default: add space between tokens
+      result.push(' ');
+    }
+  }
+
+  return result.join('');
+}
+
 function formatHugoTemplates(content) {
-  // Handle shortcodes: {{< shortcode param="value" >}}
-  content = content.replace(/\{\{<\s*([^>]*?)\s*>\}\}/g, (match, inner) => {
-    inner = inner.trim();
+  try {
+    // Handle both {{< >}} and {{% %}} shortcodes with tokenization
+    content = content.replace(/(\{\{[<%]\s*)(.*?)(\s*[>%]\}\})/g, (match, open, inner, close) => {
+      try {
+        // Remove self-closing slash
+        inner = inner.replace(/\/$/, '');
 
-    // Handle self-closing shortcodes - remove trailing /
-    inner = inner.replace(/\/$/, '');
+        // Tokenize and reformat
+        const tokens = tokenizeShortcode(inner);
+        const formatted = formatShortcodeFromTokens(tokens);
 
-    // Fix only the specific patterns we know are broken
-    // Pattern: "value"param= -> "value" param=
-    inner = inner.replace(/("[^"]*")([a-z][a-z]*=)/gi, '$1 $2');
-    inner = inner.replace(/('[^']*')([a-z][a-z]*=)/gi, '$1 $2');
+        // Determine proper delimiters (preserve < vs %)
+        const isPercent = open.includes('%');
+        const openDelim = isPercent ? '{{% ' : '{{< ';
+        const closeDelim = isPercent ? ' %}}' : ' >}}';
 
-    // Pattern: word"value" -> word "value" (but not param="value")
-    inner = inner.replace(/([a-z]+)(?<!=)("[^"]*")/gi, '$1 $2');
+        return openDelim + formatted + closeDelim;
+      } catch (error) {
+        console.warn(`Failed to format shortcode: ${match}. Error: ${error.message}`);
+        return match; // Return original on error
+      }
+    });
 
-    // Normalize spaces
-    inner = inner.replace(/\s+/g, ' ').trim();
+    // Handle regular Hugo variables: {{ .Variable }}
+    content = content.replace(/\{\{(?!<|%|\/\*)\s*([^}]*?)\s*\}\}/g, (match, inner) => {
+      try {
+        // Check for whitespace control (- at start or end)
+        const startControl = match.match(/^\{\{-/) ? '{{- ' : '{{ ';
+        const endControl = match.match(/-\}\}$/) ? ' -}}' : ' }}';
 
-    // Split into tokens now that spacing is normalized
-    const tokens = inner.split(' ').filter(token => token.trim());
+        inner = inner.replace(/^-\s*/, '').replace(/\s*-$/, ''); // Remove control chars
+        inner = inner.trim().replace(/\s+/g, ' ');
+        inner = inner.replace(/\s*\|\s*/g, ' | ');
 
-    return `{{< ${tokens.join(' ')} >}}`;
-  });
+        return `${startControl}${inner}${endControl}`;
+      } catch (error) {
+        console.warn(`Failed to format variable: ${match}. Error: ${error.message}`);
+        return match; // Return original on error
+      }
+    });
 
-  // Handle {{% %}} shortcodes
-  content = content.replace(/\{\{%\s*([^%]*?)\s*%\}\}/g, (match, inner) => {
-    inner = inner.trim().replace(/\s+/g, ' ');
-    return `{{% ${inner} %}}`;
-  });
+    // Handle comments: {{/* comment */}}
+    content = content.replace(/\{\{\/\*\s*([\s\S]*?)\s*\*\/\}\}/g, (match, inner) => {
+      try {
+        return `{{/* ${inner.trim()} */}}`;
+      } catch (error) {
+        console.warn(`Failed to format comment: ${match}. Error: ${error.message}`);
+        return match; // Return original on error
+      }
+    });
 
-  // Handle regular Hugo variables: {{ .Variable }}
-  content = content.replace(/\{\{(?!<|%|\/\*)\s*([^}]*?)\s*\}\}/g, (match, inner) => {
-    // Check for whitespace control (- at start or end)
-    const startControl = match.match(/^\{\{-/) ? '{{- ' : '{{ ';
-    const endControl = match.match(/-\}\}$/) ? ' -}}' : ' }}';
-
-    inner = inner.replace(/^-\s*/, '').replace(/\s*-$/, ''); // Remove control chars
-    inner = inner.trim().replace(/\s+/g, ' ');
-    inner = inner.replace(/\s*\|\s*/g, ' | ');
-
-    return `${startControl}${inner}${endControl}`;
-  });
-
-  // Handle comments: {{/* comment */}}
-  content = content.replace(/\{\{\/\*\s*([\s\S]*?)\s*\*\/\}\}/g, (match, inner) => {
-    return `{{/* ${inner.trim()} */}}`;
-  });
-
-  return content;
+    return content;
+  } catch (error) {
+    console.error(`Critical error in formatHugoTemplates: ${error.message}`);
+    return content; // Return original content on critical failure
+  }
 }
 
 export default {
