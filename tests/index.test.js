@@ -85,7 +85,7 @@ title: "Test"
 `;
 
       const result = await formatCode(input);
-      expect(result).toContain('{{< figure src="/test.jpg " title="Test " alt="Description" >}}');
+      expect(result).toContain('{{< figure src="/test.jpg" title="Test" alt="Description" >}}');
     });
 
     test('formats shortcodes with mixed quote styles', async () => {
@@ -152,6 +152,60 @@ title: "Test"
 
       const result = await formatCode(input);
       expect(result).toContain('{{< figure src="/test.jpg" >}}');
+    });
+
+    test('removes spaces inside quoted parameter values', async () => {
+      const input = `---
+title: "Test"
+---
+
+{{< img src="/images/my-prompt.png " width="75%" center="true" >}}
+`;
+
+      const result = await formatCode(input);
+      expect(result).toContain('{{< img src="/images/my-prompt.png" width="75%" center="true" >}}');
+    });
+
+    test('handles mixed quote styles to avoid escaping', async () => {
+      const input = `---
+title: "Test"
+---
+
+{{<figure alt='Image with "quotes" inside' class="featured">}}
+`;
+
+      const result = await formatCode(input);
+      expect(result).toContain(
+        '{{< figure alt=\'Image with "quotes" inside\' class="featured" >}}'
+      );
+    });
+
+    test('formats word immediately followed by quotes', async () => {
+      const input = `---
+title: "Test"
+---
+
+{{< highlight go"linenos=table,hl_lines=2 3" >}}
+code here
+{{< /highlight >}}
+`;
+
+      const result = await formatCode(input);
+      expect(result).toContain('{{< highlight go "linenos=table,hl_lines=2 3" >}}');
+    });
+
+    test('handles multiple spacing issues in one shortcode', async () => {
+      const input = `---
+title: "Test"
+---
+
+{{<figure src="/test.jpg "title="Test Title "alt="Description "class="featured">}}
+`;
+
+      const result = await formatCode(input);
+      expect(result).toContain(
+        '{{< figure src="/test.jpg" title="Test Title" alt="Description" class="featured" >}}'
+      );
     });
   });
 
@@ -286,9 +340,7 @@ This post is featured!
       expect(result).toContain('{{ .Date.Format "January 2, 2006" }}');
 
       // Check shortcodes
-      expect(result).toContain(
-        '{{< figure src="/hero.jpg " alt="Hero Image " class="featured" >}}'
-      );
+      expect(result).toContain('{{< figure src="/hero.jpg" alt="Hero Image" class="featured" >}}');
       expect(result).toContain('{{< highlight go "linenos=table,hl_lines=2 3" >}}');
       expect(result).toContain('{{% notice warning %}}');
 
@@ -366,16 +418,16 @@ title: "Test"
     });
 
     test('handles shortcodes with special characters in parameters', async () => {
-      const input = `---
+      const input =
+        `---
 title: "Test"
 ---
 
-{{<figure src="/path/to/image.jpg"alt="Image with \"quotes\" and 'apostrophes'">}}
-`;
+` + String.raw`{{<figure src="/path/to/image.jpg"alt="Image with \"quotes\" and 'apostrophes'">}}`;
 
       const result = await formatCode(input);
       expect(result).toContain(
-        '{{< figure src="/path/to/image.jpg " alt="Image with "quotes " and \'apostrophes\'" >}}'
+        String.raw`{{< figure src="/path/to/image.jpg" alt="Image with \"quotes\" and 'apostrophes'" >}}`
       );
     });
 
@@ -412,6 +464,66 @@ This is a very long line that should be wrapped when the print width is set to a
       expect(result).toContain('title: "Test"');
       // Markdown should be formatted according to print width
       expect(result.split('\n').some(line => line.length <= 40)).toBe(true);
+    });
+  });
+
+  describe('Critical Safety Tests', () => {
+    test('handles malformed quotes gracefully', async () => {
+      const input = `---
+title: "Test"
+---
+
+{{< shortcode param="unclosed quote here and more text >}}
+`;
+
+      const result = await formatCode(input);
+      // Should not hang and should return some reasonable output
+      expect(result).toContain('title: "Test"');
+      expect(result).toContain('{{<');
+    });
+
+    test('handles very long parameter values', async () => {
+      const longValue = 'x'.repeat(1000);
+      const input = `---
+title: "Test"
+---
+
+{{< shortcode param="${longValue}" >}}
+`;
+
+      const result = await formatCode(input);
+      expect(result).toContain('title: "Test"');
+      expect(result).toContain(longValue);
+    });
+
+    test('handles adjacent shortcodes without spaces', async () => {
+      const input = `---
+title: "Test"
+---
+
+{{< ref "post1" >}}{{< ref "post2" >}}
+`;
+
+      const result = await formatCode(input);
+      expect(result).toContain('{{< ref "post1" >}}');
+      expect(result).toContain('{{< ref "post2" >}}');
+    });
+
+    test('handles real Hugo shortcode patterns', async () => {
+      const input = `---
+title: "Test"
+---
+
+{{< youtube dQw4w9WgXcQ >}}
+
+{{< figure src="/images/photo.jpg" title="My Photo" caption="A nice photo" alt="Photo description" >}}
+`;
+
+      const result = await formatCode(input);
+      expect(result).toContain('{{< youtube dQw4w9WgXcQ >}}');
+      expect(result).toContain(
+        '{{< figure src="/images/photo.jpg" title="My Photo" caption="A nice photo" alt="Photo description" >}}'
+      );
     });
   });
 });
