@@ -1,6 +1,6 @@
 {
   "name": "prettier-plugin-hugo-post",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "description": "A Prettier plugin for Hugo content files with YAML front matter, Markdown content, and Go template syntax",
   "main": "src/index.js",
   "type": "module",
