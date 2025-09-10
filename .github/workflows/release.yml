@@ -9,13 +9,25 @@ permissions:
   contents: write
 
 jobs:
-  # Only run release if CI passes
-  test:
-    uses: ./.github/workflows/ci.yml
+  validate-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all checks passed
+        run: |
+          # Query GitHub API to ensure all checks passed for this commit
+          gh api repos/${{ github.repository }}/commits/${{ github.sha }}/status \
+            --jq '.state' | grep -q "success" || {
+            echo "❌ CI checks have not passed for this commit"
+            echo "Please ensure all CI checks pass before creating a release tag"
+            exit 1
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
+    needs: validate-tests
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
