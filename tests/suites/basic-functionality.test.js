@@ -146,6 +146,26 @@ invalid yaml: content
         input: '{{- .Title -}}',
         shouldContain: ['{{- .Title -}}'],
       },
+      {
+        name: 'formats complex pipe expressions with proper spacing',
+        input: '{{ .Content|replaceRE  "\\\\b\\\\w+\\\\b"   "word"|truncate 100 }}',
+        shouldContain: ['{{ .Content | replaceRE "\\\\b\\\\w+\\\\b" "word" | truncate 100 }}'],
+      },
+      {
+        name: 'formats function calls with multiple arguments',
+        input: '{{ printf  "%s - %s"   .Title   .Date }}',
+        shouldContain: ['{{ printf "%s - %s" .Title .Date }}'],
+      },
+      {
+        name: 'formats dict and slice functions',
+        input: '{{ dict   "title"  .Title  "date"   .Date }}',
+        shouldContain: ['{{ dict "title" .Title "date" .Date }}'],
+      },
+      {
+        name: 'handles complex nested expressions',
+        input: '{{ .Title | upper | printf "Title: %s" }}',
+        shouldContain: ['{{ .Title | upper | printf "Title: %s" }}'],
+      },
     ]);
   });
 

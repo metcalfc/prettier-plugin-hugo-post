@@ -384,6 +384,126 @@ function formatShortcodeFromTokens(tokens) {
   return result.join('');
 }
 
+/**
+ * Enhanced template variable formatter inspired by prettier-plugin-go-template
+ * Handles Go template syntax with better spacing and structure
+ */
+function formatTemplateVariable(match, inner) {
+  // Check for whitespace control (- at start or end)
+  const startControl = match.match(/^\{\{-/) ? '{{- ' : '{{ ';
+  const endControl = match.match(/-\}\}$/) ? ' -}}' : ' }}';
+
+  // Remove control characters from inner content
+  inner = inner.replace(/^-\s*/, '').replace(/\s*-$/, '');
+
+  // Handle different template constructs
+  const formatted = formatTemplateExpression(inner.trim());
+
+  return `${startControl}${formatted}${endControl}`;
+}
+
+/**
+ * Format a template expression with proper spacing and structure
+ */
+function formatTemplateExpression(expr) {
+  // Handle empty expressions
+  if (!expr) return '';
+
+  // Handle control structures (if, range, with, end, else, etc.)
+  if (expr.match(/^\s*(if|range|with|block|define|template)\b/)) {
+    return formatControlStructure(expr);
+  }
+
+  // Handle 'end' statements
+  if (expr.match(/^\s*end\s*$/)) {
+    return 'end';
+  }
+
+  // Handle 'else' statements
+  if (expr.match(/^\s*else(\s+if\b)?/)) {
+    return formatControlStructure(expr);
+  }
+
+  // Handle regular expressions (variables, functions, pipes)
+  return formatExpression(expr);
+}
+
+/**
+ * Format control structures like if, range, with
+ */
+function formatControlStructure(expr) {
+  // Normalize whitespace and preserve structure
+  return expr.trim().replace(/\s+/g, ' ');
+}
+
+/**
+ * Format regular expressions with proper pipe spacing and function calls
+ */
+function formatExpression(expr) {
+  // Handle complex expressions with pipes
+  if (expr.includes('|')) {
+    return formatPipeExpression(expr);
+  }
+
+  // Handle function calls with multiple arguments
+  if (expr.includes(' ')) {
+    return formatFunctionCall(expr);
+  }
+
+  // Simple variable access
+  return expr.trim();
+}
+
+/**
+ * Format pipe expressions with proper spacing
+ */
+function formatPipeExpression(expr) {
+  return expr
+    .split('|')
+    .map(part => formatFunctionCall(part.trim())) // Format each part as a function call
+    .filter(part => part) // Remove empty parts
+    .join(' | ');
+}
+
+/**
+ * Format function calls with proper argument spacing
+ */
+function formatFunctionCall(expr) {
+  // Handle quoted strings and preserve them
+  const parts = [];
+  let current = '';
+  let inQuotes = false;
+  let quoteChar = '';
+
+  for (let i = 0; i < expr.length; i++) {
+    const char = expr[i];
+
+    if ((char === '"' || char === "'") && !inQuotes) {
+      inQuotes = true;
+      quoteChar = char;
+      current += char;
+    } else if (char === quoteChar && inQuotes) {
+      inQuotes = false;
+      current += char;
+      parts.push(current.trim());
+      current = '';
+    } else if (char === ' ' && !inQuotes) {
+      if (current.trim()) {
+        parts.push(current.trim());
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.trim()) {
+    parts.push(current.trim());
+  }
+
+  return parts.join(' ');
+}
+
 function formatHugoTemplates(content) {
   try {
     // Handle both {{< >}} and {{% %}} shortcodes with tokenization
@@ -411,15 +531,7 @@ function formatHugoTemplates(content) {
     // Handle regular Hugo variables: {{ .Variable }}
     content = content.replace(/\{\{(?!<|%|\/\*)\s*([^}]*?)\s*\}\}/g, (match, inner) => {
       try {
-        // Check for whitespace control (- at start or end)
-        const startControl = match.match(/^\{\{-/) ? '{{- ' : '{{ ';
-        const endControl = match.match(/-\}\}$/) ? ' -}}' : ' }}';
-
-        inner = inner.replace(/^-\s*/, '').replace(/\s*-$/, ''); // Remove control chars
-        inner = inner.trim().replace(/\s+/g, ' ');
-        inner = inner.replace(/\s*\|\s*/g, ' | ');
-
-        return `${startControl}${inner}${endControl}`;
+        return formatTemplateVariable(match, inner);
       } catch (error) {
         console.warn(`Failed to format variable: ${match}. Error: ${error.message}`);
         return match; // Return original on error
