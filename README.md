@@ -1,5 +1,20 @@
 # prettier-plugin-hugo-post
 
+> [!IMPORTANT]
+> **This project is no longer maintained and the repository is archived.**
+>
+> Development continues in [htnabe/prettier-plugin-hugo-post](https://github.com/htnabe/prettier-plugin-hugo-post),
+> a fork that has been ported to TypeScript and is actively maintained. It is published on npm as
+> [`@htnabe/prettier-plugin-hugo-post`](https://www.npmjs.com/package/@htnabe/prettier-plugin-hugo-post):
+>
+> ```bash
+> npm install --save-dev prettier @htnabe/prettier-plugin-hugo-post
+> ```
+>
+> Then replace `prettier-plugin-hugo-post` with `@htnabe/prettier-plugin-hugo-post` in your Prettier `plugins` list.
+> Please report issues and send contributions there. The original `prettier-plugin-hugo-post` package on npm
+> will remain available but will not receive further updates.
+
 [![npm version](https://img.shields.io/npm/v/prettier-plugin-hugo-post)](https://www.npmjs.com/package/prettier-plugin-hugo-post)
 [![license](https://img.shields.io/npm/l/prettier-plugin-hugo-post)](https://github.com/metcalfc/prettier-plugin-hugo-post/blob/main/LICENSE)
 
